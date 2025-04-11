@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,95 +9,293 @@
             font-family: 'Roboto', sans-serif;
             background-color: #f4f7fa;
             display: flex;
+            /* Align items to the top instead of center */
+            align-items: flex-start;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            min-height: 100vh; /* Use min-height */
             margin: 0;
+            padding-top: 40px; /* Add some padding at the top */
+        }
+
+        .container { /* New wrapper for centering */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 450px; /* Limit max width */
         }
 
         .timer-container {
             background-color: #fff;
-            padding: 20px;
+            padding: 25px; /* Increased padding */
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* Slightly softer shadow */
+            width: 100%; /* Take full width of parent */
             text-align: center;
+            box-sizing: border-box; /* Include padding in width */
+            margin-bottom: 30px; /* Space below timer */
         }
 
         .timer-display {
             font-size: 48px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 25px; /* Increased margin */
             color: #333;
+            background-color: #f0f0f0; /* Light background for display */
+            padding: 10px 0; /* Add padding */
+            border-radius: 5px; /* Rounded corners */
         }
 
         .description-input {
             width: 100%;
-            padding: 10px;
+            padding: 12px; /* Increased padding */
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 5px;
             box-sizing: border-box;
-            margin-bottom: 15px;
+            margin-bottom: 20px; /* Increased margin */
         }
 
-        .start-button {
+        .start-stop-button { /* Renamed class */
             width: 100%;
-            padding: 12px;
-            background-color: #e57cd8;
+            padding: 15px; /* Increased padding */
             color: white;
             border: none;
             border-radius: 5px;
             font-size: 18px;
             cursor: pointer;
+            transition: background-color 0.3s ease; /* Smooth transition */
+            font-weight: bold; /* Bold text */
+        }
+
+        .start-button { /* Specific class for start state */
+            background-color: #e57cd8; /* Original pink */
         }
 
         .start-button:hover {
-            background-color: #d15dc3;
+            background-color: #d15dc3; /* Darker pink on hover */
         }
+
+        .stop-button { /* Specific class for stop state */
+            background-color: #ff6b6b; /* Red color */
+        }
+
+        .stop-button:hover {
+            background-color: #e74c3c; /* Darker red on hover */
+        }
+
+        .entries-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%; /* Take full width of parent */
+            box-sizing: border-box;
+            text-align: left; /* Align text to the left */
+        }
+
+        .entries-container h2 {
+            text-align: center;
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        #entries-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 300px; /* Limit height */
+            overflow-y: auto; /* Add scroll if needed */
+        }
+
+        #entries-list li {
+            background-color: #f9f9f9;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 15px;
+            color: #444;
+        }
+
+         #entries-list li:last-child {
+            border-bottom: none;
+        }
+
+        .entry-description {
+            flex-grow: 1;
+            margin-right: 15px;
+            word-break: break-word; /* Prevent long descriptions from overflowing */
+        }
+
+        .entry-duration {
+            font-weight: bold;
+            color: #333;
+            white-space: nowrap; /* Prevent duration from wrapping */
+        }
+
+        /* Style for empty state */
+        .empty-state {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+            font-style: italic;
+        }
+
     </style>
 </head>
 <body>
-    <div class="timer-container">
-        <div class="timer-display" id="timer">00:00:00</div>
-        <input type="text" class="description-input" placeholder="What are you working on?">
-        <button class="start-button" onclick="toggleTimer()" id="startStop">Start</button>
+    <div class="container">
+        <div class="timer-container">
+            <div class="timer-display" id="timer">00:00:00</div>
+            <input type="text" class="description-input" id="description" placeholder="What are you working on?">
+            <!-- Use specific classes for styling states -->
+            <button class="start-stop-button start-button" onclick="toggleTimer()" id="startStop">Start</button>
+        </div>
+
+        <div class="entries-container">
+            <h2>Time Entries</h2>
+            <ul id="entries-list">
+                <!-- Entries will be added here by JavaScript -->
+                 <li class="empty-state">No entries yet. Start tracking!</li>
+            </ul>
+        </div>
     </div>
 
     <script>
-        let timer;
+        let timerInterval = null; // Renamed for clarity
         let elapsedSeconds = 0;
         let isRunning = false;
+        let timeEntries = []; // Array to hold entries
 
-        function updateDisplay() {
-            let hours = Math.floor(elapsedSeconds / 3600);
-            let minutes = Math.floor((elapsedSeconds % 3600) / 60);
-            let seconds = elapsedSeconds % 60;
+        const timerDisplay = document.getElementById('timer');
+        const startStopButton = document.getElementById('startStop');
+        const descriptionInput = document.getElementById('description');
+        const entriesList = document.getElementById('entries-list');
 
-            document.getElementById('timer').textContent = 
-                [hours, minutes, seconds]
-                .map(v => v < 10 ? "0" + v : v)
+        // Format time helper function
+        function formatTime(totalSeconds) {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            return [hours, minutes, seconds]
+                .map(v => String(v).padStart(2, '0')) // Use padStart for cleaner formatting
                 .join(':');
         }
 
-        function toggleTimer() {
-            const button = document.getElementById('startStop');
+        function updateDisplay() {
+            timerDisplay.textContent = formatTime(elapsedSeconds);
+        }
 
+        function renderEntry(entry) {
+             // Remove empty state if it exists
+            const emptyState = entriesList.querySelector('.empty-state');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const listItem = document.createElement('li');
+
+            const descriptionSpan = document.createElement('span');
+            descriptionSpan.className = 'entry-description';
+            descriptionSpan.textContent = entry.description || 'No description'; // Handle empty description
+
+            const durationSpan = document.createElement('span');
+            durationSpan.className = 'entry-duration';
+            durationSpan.textContent = formatTime(entry.duration);
+
+            listItem.appendChild(descriptionSpan);
+            listItem.appendChild(durationSpan);
+
+            // Add to the top of the list
+            entriesList.insertBefore(listItem, entriesList.firstChild);
+        }
+
+         function loadEntries() {
+            const storedEntries = localStorage.getItem('timeEntries');
+            if (storedEntries) {
+                timeEntries = JSON.parse(storedEntries);
+                // Clear existing list items except the empty state if present
+                entriesList.innerHTML = '';
+                if (timeEntries.length > 0) {
+                     timeEntries.forEach(entry => renderEntry(entry));
+                } else {
+                    // Add back empty state if no entries were loaded
+                    entriesList.innerHTML = '<li class="empty-state">No entries yet. Start tracking!</li>';
+                }
+            } else {
+                 // Ensure empty state is shown if nothing in storage
+                entriesList.innerHTML = '<li class="empty-state">No entries yet. Start tracking!</li>';
+            }
+        }
+
+        function saveEntries() {
+            localStorage.setItem('timeEntries', JSON.stringify(timeEntries));
+        }
+
+
+        function toggleTimer() {
             if (!isRunning) {
-                timer = setInterval(() => {
+                // Start Timer
+                // Use current description or default if empty
+                const description = descriptionInput.value.trim() || 'Timer started';
+                // Clear input for next time (optional)
+                // descriptionInput.value = '';
+
+                elapsedSeconds = 0; // Reset timer each time it starts
+                updateDisplay(); // Show 00:00:00 immediately
+
+                timerInterval = setInterval(() => {
                     elapsedSeconds++;
                     updateDisplay();
                 }, 1000);
-                button.textContent = 'Stop';
-            } else {
-                clearInterval(timer);
-                button.textContent = 'Start';
-            }
 
-            isRunning = !isRunning;
+                // Update button state and style
+                startStopButton.textContent = 'Stop';
+                startStopButton.classList.remove('start-button');
+                startStopButton.classList.add('stop-button');
+                isRunning = true;
+
+            } else {
+                // Stop Timer
+                clearInterval(timerInterval);
+                timerInterval = null; // Clear interval ID
+
+                // Only save if timer actually ran for at least a second
+                if (elapsedSeconds > 0) {
+                    const entry = {
+                        description: descriptionInput.value.trim() || 'No description',
+                        duration: elapsedSeconds,
+                        endTime: new Date().toISOString() // Store end time
+                    };
+                    timeEntries.push(entry);
+                    saveEntries();
+                    renderEntry(entry); // Add the new entry to the top of the list
+                }
+
+                // Reset state
+                isRunning = false;
+                elapsedSeconds = 0; // Reset seconds for next run
+                updateDisplay(); // Update display to 00:00:00
+                descriptionInput.value = ''; // Clear description field after stopping
+
+                // Update button state and style
+                startStopButton.textContent = 'Start';
+                startStopButton.classList.remove('stop-button');
+                startStopButton.classList.add('start-button');
+            }
         }
 
-        updateDisplay();
+        // Initial Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            loadEntries(); // Load entries from localStorage when the page loads
+            updateDisplay(); // Initialize display with 00:00:00
+        });
+
     </script>
 </body>
 </html>
