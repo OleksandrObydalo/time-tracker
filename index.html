@@ -137,6 +137,26 @@
             white-space: nowrap; /* Prevent duration from wrapping */
         }
 
+        .restart-button {
+            background-color: #4a7aff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        .restart-button:hover {
+            background-color: #3a67e8;
+        }
+
         /* Style for empty state */
         .empty-state {
             text-align: center;
@@ -208,14 +228,38 @@
             durationSpan.className = 'entry-duration';
             durationSpan.textContent = formatTime(entry.duration);
 
+            const restartButton = document.createElement('button');
+            restartButton.className = 'restart-button';
+            restartButton.innerHTML = '&#8635;'; // Refresh/restart icon
+            restartButton.title = 'Restart this timer';
+            restartButton.addEventListener('click', () => restartEntry(entry));
+
             listItem.appendChild(descriptionSpan);
             listItem.appendChild(durationSpan);
+            listItem.appendChild(restartButton);
 
             // Add to the top of the list
             entriesList.insertBefore(listItem, entriesList.firstChild);
         }
+        
+        function restartEntry(entry) {
+            // If timer is already running, stop it
+            if (isRunning) {
+                toggleTimer();
+            }
+            
+            // Set the description input to the entry's description
+            descriptionInput.value = entry.description;
+            
+            // Reset elapsed seconds to 0 (we don't use the entry's duration as we want to start fresh)
+            elapsedSeconds = 0;
+            updateDisplay();
+            
+            // Start the timer
+            toggleTimer();
+        }
 
-         function loadEntries() {
+        function loadEntries() {
             const storedEntries = localStorage.getItem('timeEntries');
             if (storedEntries) {
                 timeEntries = JSON.parse(storedEntries);
